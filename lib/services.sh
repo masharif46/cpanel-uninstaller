@@ -73,12 +73,22 @@ _service_stop_disable() {
             log_info "Stopping service: ${svc}"
             safe_cmd "systemctl stop '${svc}'"
         fi
-        if systemctl is-enabled --quiet "${svc}" 2>/dev/null; then
-            log_info "Disabling service: ${svc}"
-            safe_cmd "systemctl disable '${svc}'"
-        fi
-        safe_cmd "systemctl mask '${svc}' >/dev/null 2>&1 || true"
-        safe_cmd "systemctl unmask '${svc}' >/dev/null 2>&1 || true"
+        # Only `disable` units that have an [Install] section. Units in
+        # state "static", "alias", "linked", "indirect", etc. either can't
+        # be disabled or produce "The unit files have no installation
+        # config" stderr noise. `is-enabled --quiet` returns 0 for those
+        # too, so we check the state string directly.
+        local en_state
+        en_state=$(systemctl is-enabled "${svc}" 2>/dev/null || true)
+        case "${en_state}" in
+            enabled|enabled-runtime)
+                log_info "Disabling service: ${svc}"
+                safe_cmd "systemctl disable '${svc}'"
+                ;;
+            *)
+                log_debug "Service ${svc} state=${en_state:-unknown}; skipping disable"
+                ;;
+        esac
     else
         log_debug "Service ${svc} not present"
     fi

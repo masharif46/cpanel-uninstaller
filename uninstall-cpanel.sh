@@ -346,8 +346,9 @@ EOF
 # ------------------------------------------------------------------------------
 on_error() {
     local exit_code=$?
-    local line_no=$1
-    log_error "Script failed at line ${line_no} with exit code ${exit_code}"
+    local line_no=${1:-?}
+    local src="${BASH_SOURCE[1]:-${SCRIPT_NAME}}"
+    log_error "Script failed at ${src}:${line_no} with exit code ${exit_code}"
     log_error "See ${LOG_FILE} for details."
     log_error "Backup preserved at ${BACKUP_DIR}"
     exit "${exit_code}"
@@ -374,6 +375,12 @@ main() {
     phase_firewall_cleanup
     phase_system_restore
     phase_post_verify
+
+    # Uninstall is complete. Disarm the ERR trap so any spurious
+    # non-zero exit during shell teardown (tee subprocess, closed FDs,
+    # etc.) can't print a misleading "Script failed" banner after a
+    # successful run.
+    trap - ERR
 
     print_report
 }

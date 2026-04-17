@@ -84,6 +84,14 @@ remove_path() {
             log_info "[DRY-RUN] rm -rf ${path}"
         else
             log_debug "Removing ${path}"
+            # cPanel sets append-only (chattr +a) on several log files
+            # (stats_log, cphulkd_errors.log, error_log, dnsadmin_log, etc.)
+            # and immutable (+i) on a few data files (var/cpanel/analytics/
+            # system_id). rm returns "Operation not permitted" on those
+            # even as root until the attributes are cleared.
+            if command -v chattr &>/dev/null && [[ -d "${path}" || -f "${path}" ]]; then
+                chattr -R -ia -- "${path}" 2>/dev/null || true
+            fi
             rm -rf --one-file-system -- "${path}" || log_warn "Could not remove ${path}"
         fi
     else

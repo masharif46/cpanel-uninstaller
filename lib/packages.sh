@@ -26,16 +26,27 @@ _remove_rpms() {
         [[ -z "${pkg}" ]] && continue
         if [[ $DRY_RUN -eq 1 ]]; then
             log_info "[DRY-RUN] rpm -e --nodeps --allmatches '${pkg}'"
+            continue
+        fi
+        log_debug "rpm -e ${pkg}"
+        if rpm -e --nodeps --allmatches "${pkg}" 2>/dev/null; then
+            continue
+        fi
+        # Scriptlet (pre/postun) failed — retry skipping scripts and triggers.
+        # Common with cPanel plugin packages (socialbee, xovi, etc.) whose
+        # license-removal scripts exit non-zero when the service is gone.
+        log_debug "Retrying ${pkg} with --noscripts --notriggers"
+        if rpm -e --nodeps --allmatches --noscripts --notriggers "${pkg}" 2>/dev/null; then
+            continue
+        fi
+        # Last resort: drop the package from the RPM DB only. Files are
+        # cleaned in Phase 6 anyway, so leaving them briefly is safe and
+        # stops a stuck package from blocking a later reinstall.
+        log_debug "Retrying ${pkg} with --justdb"
+        if rpm -e --nodeps --allmatches --noscripts --notriggers --justdb "${pkg}" 2>/dev/null; then
+            log_warn "Removed ${pkg} from RPM DB only (files will be cleaned in Phase 6)"
         else
-            log_debug "rpm -e ${pkg}"
-            if ! rpm -e --nodeps --allmatches "${pkg}" 2>/dev/null; then
-                # Scriptlet (pre/postun) failed — retry skipping scripts.
-                # Common with cPanel plugin packages whose license-removal
-                # scripts exit non-zero when the service is already gone.
-                log_debug "Retrying ${pkg} with --noscripts"
-                rpm -e --nodeps --allmatches --noscripts "${pkg}" 2>/dev/null || \
-                    log_warn "Failed to remove ${pkg} (ignored)"
-            fi
+            log_warn "Failed to remove ${pkg} (ignored)"
         fi
     done <<< "${pkgs}"
 }
