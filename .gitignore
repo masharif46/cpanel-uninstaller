@@ -1,0 +1,37 @@
+# Log files
+*.log
+logs/
+/var/log/cpanel-uninstaller/
+
+# Backups created by the script
+cpanel-uninstall-backup-*
+*.tar.gz
+*.tgz
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Python / misc tooling cache
+__pycache__/
+*.pyc
+.shellcheck-cache/
+
+# Local test files
+test-output/
+tmp/
+scratch/
+
+# Secrets (just in case)
+*.pem
+*.key
+*.crt
+.env
+.env.*
+!.env.example
+.release-notes-*.md

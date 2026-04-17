@@ -1,0 +1,33 @@
+name: ShellCheck
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Least-privilege: this workflow only needs to read the repo.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref (saves CI minutes).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck:
+    name: Lint shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5         # Node 24; replaces v4 (Node 20, deprecated)
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0   # pinned, no more @master drift
+        env:
+          SHELLCHECK_OPTS: -e SC1091 -e SC2034 -e SC2086 -x
+        with:
+          scandir: '.'
+          severity: warning
+          additional_files: 'uninstall-cpanel.sh'

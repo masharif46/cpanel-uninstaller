@@ -1,0 +1,27 @@
+# Enforce LF line endings for all text files — critical because the
+# shell scripts must run on Linux regardless of what OS the contributor
+# uses. Without this file, Git on Windows would convert LF to CRLF and
+# cause "bad interpreter: /bin/bash^M" errors on the target server.
+
+*               text=auto eol=lf
+
+# Explicit LF for shell scripts
+*.sh            text eol=lf
+Makefile        text eol=lf
+
+# Markdown / config / YAML also LF for consistency
+*.md            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.json          text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+LICENSE         text eol=lf
+
+# Binary files — leave untouched
+*.png           binary
+*.jpg           binary
+*.gif           binary
+*.tar.gz        binary
+*.tgz           binary
+*.zip           binary
